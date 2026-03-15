@@ -169,7 +169,6 @@ function TodayScreen({state,update,toast,score,streak}){
   const doneCount=DAILY_ANCHORS.filter(t=>tasks[t.id]).length;
 
   const [cleanOpen,setCleanOpen]=useState(false);
-  const [cleanOpen,setCleanOpen]=useState(false);
   const toggleTask=(id,pts)=>{const newT={...tasks,[id]:!tasks[id]};update({tasks:{...state.tasks,[key]:newT}});if(!tasks[id])toast(`+${pts} XP ✨`);};
   const toggleClean=(taskId)=>{const c={...(state.cleanDone||{})};const dk=`${key}_${taskId}`;c[dk]=!c[dk];update({cleanDone:c});if(c[dk])toast("+8 XP 🏠");};
   const toggleCustom=(taskId)=>{const c={...(state.customDone||{})};const dk=`${key}_${taskId}`;c[dk]=!c[dk];update({customDone:c});if(c[dk])toast("+10 XP ✅");};
