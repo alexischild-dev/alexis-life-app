@@ -8,6 +8,13 @@ function saveData(d) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)
 function todayKey() { return new Date().toISOString().slice(0,10); }
 function monthKey() { return new Date().toISOString().slice(0,7); }
 function getDayName() { return ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][new Date().getDay()]; }
+function getWeekStart(){
+  const d=new Date();
+  const day=d.getDay();
+  const diff=d.getDate()-(day===0?6:day-1);
+  const mon=new Date(d.setDate(diff));
+  return mon.toISOString().slice(0,10);
+}
 function getGreeting() { const h=new Date().getHours(); return h<12?"good morning":h<17?"good afternoon":"good evening"; }
 const MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
 const DAYS_LONG=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
@@ -201,13 +208,25 @@ function TodayScreen({state,update,toast,score,streak}){
         <Card>
           <CardHead icon="🌡️" title="How are you right now?" accent={G.plumLight}/>
           <CardBody>
-            <div style={{display:"flex",gap:6,justifyContent:"space-between"}}>
+            <div style={{display:"flex",gap:6,justifyContent:"space-between",marginBottom:10}}>
               {moods.map(m=>(
                 <button key={m.l} onClick={()=>{update({mood:{...state.mood,[key]:{...mood,mood:m.l}}});if(!mood.mood)toast("+5 XP 🌙");}} style={{flex:1,padding:"10px 4px",borderRadius:12,border:`1.5px solid ${mood.mood===m.l?G.plumLight:G.border}`,background:mood.mood===m.l?`${G.plum}33`:"transparent",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,transition:"all 0.2s"}}>
                   <div style={{fontSize:"1.3rem"}}>{m.e}</div>
                   <div style={{fontSize:"0.58rem",color:mood.mood===m.l?G.plumLight:G.textMid,fontWeight:600}}>{m.l}</div>
                 </button>
               ))}
+            </div>
+            <div style={{borderTop:`1px solid ${G.border}`,paddingTop:10}}>
+              <div style={{fontSize:"0.68rem",color:G.textLight,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>Energy level</div>
+              <div style={{display:"flex",gap:6}}>
+                {[{l:"Low",e:"🔋",c:G.rose},{l:"Medium",e:"⚡",c:G.gold},{l:"High",e:"🚀",c:G.sage}].map(en=>(
+                  <button key={en.l} onClick={()=>update({mood:{...state.mood,[key]:{...mood,energy:en.l}}})}
+                    style={{flex:1,padding:"8px 4px",borderRadius:10,border:`1.5px solid ${mood.energy===en.l?en.c:G.border}`,background:mood.energy===en.l?`${en.c}22`:"transparent",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,transition:"all 0.2s"}}>
+                    <div style={{fontSize:"1rem"}}>{en.e}</div>
+                    <div style={{fontSize:"0.58rem",color:mood.energy===en.l?en.c:G.textMid,fontWeight:600}}>{en.l}</div>
+                  </button>
+                ))}
+              </div>
             </div>
           </CardBody>
         </Card>
@@ -306,6 +325,35 @@ function TodayScreen({state,update,toast,score,streak}){
               onChange={e=>update({dailyWin:{...state.dailyWin,[key]:e.target.value}})}
               placeholder="Something small counts. Ate breakfast. Showed up. Drank water."
               style={{width:"100%",padding:"12px 14px",borderRadius:12,border:`1.5px solid ${G.border}`,fontSize:"0.85rem",background:"#fdf9f5",color:G.text,resize:"none",outline:"none",minHeight:80,lineHeight:1.7}}/>
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHead icon="💪" title="Workouts This Week" accent={G.sage}/>
+          <CardBody>
+            <div style={{display:"flex",gap:6}}>
+              {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map((day,i)=>{
+                const wk=`workout_${getWeekStart()}_${day}`;
+                const done=!!(state.workoutDone||{})[wk];
+                const isToday=new Date().getDay()===(i===6?0:i+1);
+                return(
+                  <div key={day} onClick={()=>{
+                    const wd={...(state.workoutDone||{})};
+                    wd[wk]=!done;
+                    update({workoutDone:wd});
+                    if(!done)toast("💪 Workout logged!");
+                  }} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4,cursor:"pointer"}}>
+                    <div style={{width:"100%",aspectRatio:"1",borderRadius:8,border:`1.5px solid ${done?G.sage:isToday?G.gold:G.border}`,background:done?`${G.sage}22`:isToday?`${G.gold}11`:"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"0.9rem",transition:"all 0.2s"}}>
+                      {done?"✓":"·"}
+                    </div>
+                    <div style={{fontSize:"0.58rem",color:isToday?G.gold:G.textLight,fontWeight:isToday?600:400}}>{day}</div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{fontSize:"0.7rem",color:G.textMid,marginTop:10,textAlign:"center"}}>
+              {(()=>{const count=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].filter(day=>!!(state.workoutDone||{})[`workout_${getWeekStart()}_${day}`]).length;return count===0?"Tap a day to log a workout 🌿":count===1?"1 session this week — great start ✨":`${count} sessions this week 💪`;})()}
+            </div>
           </CardBody>
         </Card>
       </div>
@@ -780,7 +828,7 @@ function ProgressScreen({state,update,toast}){
   );
 }
 
-const INIT_STATE={tasks:{},mood:{},cleanDone:{},customDone:{},morningHabits:{},eveningHabits:{},sensoryLog:{},journal:{},evidence:[],customTasks:[],streaks:{current:0},lastActive:null,dailyWin:{}};
+const INIT_STATE={tasks:{},mood:{},cleanDone:{},customDone:{},morningHabits:{},eveningHabits:{},sensoryLog:{},journal:{},evidence:[],customTasks:[],streaks:{current:0},lastActive:null,dailyWin:{},workoutDone:{}};
 
 export default function App(){
   const [screen,setScreen]=useState("today");
